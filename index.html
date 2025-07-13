@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8" />
+  <title>پلیر حرفه‌ای YouTube Style</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- آیکون‌های Lucide -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body class="bg-zinc-900 text-white min-h-screen flex flex-col">
+
+  <header class="bg-zinc-800 px-6 py-4 text-xl font-bold border-b border-zinc-700">
+    🎥 پلیر ویدئو با کیفیت قابل انتخاب
+  </header>
+
+  <main class="flex flex-1">
+    <!-- پلیر -->
+    <div class="flex-1 p-6">
+      <div class="relative w-full aspect-video bg-black rounded-xl overflow-hidden group">
+        <video id="video" class="w-full h-full" src="video1-720p.mp4"></video>
+
+        <!-- کنترل‌ها -->
+        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 opacity-0 group-hover:opacity-100 transition">
+          <div class="w-full h-1 bg-zinc-600 rounded overflow-hidden cursor-pointer" id="progressBar">
+            <div id="progress" class="bg-red-500 h-full w-0"></div>
+          </div>
+
+          <div class="flex items-center justify-between mt-4">
+            <!-- سمت چپ -->
+            <div class="flex items-center gap-3">
+              <button id="playPause" class="p-2 hover:bg-zinc-700 rounded">
+                <i data-lucide="play" class="w-5 h-5"></i>
+              </button>
+              <button id="mute" class="p-2 hover:bg-zinc-700 rounded">
+                <i data-lucide="volume-2" class="w-5 h-5"></i>
+              </button>
+            </div>
+
+            <!-- سمت راست -->
+            <div class="flex items-center gap-3">
+              <select id="qualitySelect" class="bg-zinc-800 border border-zinc-600 text-sm rounded px-2 py-1">
+                <option value="1080p">1080p</option>
+                <option value="720p" selected>720p</option>
+                <option value="480p">480p</option>
+              </select>
+              <button id="fullscreen" class="p-2 hover:bg-zinc-700 rounded">
+                <i data-lucide="maximize" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- سایدبار -->
+    <aside class="w-72 bg-zinc-800 border-l border-zinc-700 p-4 space-y-4 overflow-y-auto" id="videoList">
+      <!-- ویدئوها اینجا لود می‌شن -->
+    </aside>
+  </main>
+
+  <script>
+    const videos = [
+      { title: "ویدئو شماره ۱", name: "video1", thumbnail: "thumb1.jpg" },
+      { title: "ویدئو شماره ۲", name: "video2", thumbnail: "thumb2.jpg" },
+      { title: "ویدئو شماره ۳", name: "video3", thumbnail: "thumb3.jpg" },
+    ];
+
+    const video = document.getElementById("video");
+    const playPause = document.getElementById("playPause");
+    const mute = document.getElementById("mute");
+    const fullscreen = document.getElementById("fullscreen");
+    const qualitySelect = document.getElementById("qualitySelect");
+    const progress = document.getElementById("progress");
+    const progressBar = document.getElementById("progressBar");
+    const videoList = document.getElementById("videoList");
+
+    let currentVideoName = "video1";
+
+    // لیست ویدئو
+    videos.forEach(v => {
+      const item = document.createElement("div");
+      item.className = "cursor-pointer";
+      item.innerHTML = `
+        <img src="${v.thumbnail}" class="rounded mb-2" />
+        <h4 class="text-sm font-medium">${v.title}</h4>
+      `;
+      item.onclick = () => {
+        currentVideoName = v.name;
+        video.src = `${v.name}-${qualitySelect.value}.mp4`;
+        video.load();
+        video.play();
+        updatePlayIcon();
+      };
+      videoList.appendChild(item);
+    });
+
+    // دکمه پخش
+    playPause.onclick = () => {
+      if (video.paused) {
+        video.play();
+      } else {
+        video.pause();
+      }
+      updatePlayIcon();
+    };
+
+    function updatePlayIcon() {
+      const icon = video.paused ? "play" : "pause";
+      playPause.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i>`;
+      lucide.createIcons();
+    }
+
+    // دکمه بی‌صدا
+    mute.onclick = () => {
+      video.muted = !video.muted;
+      const icon = video.muted ? "volume-x" : "volume-2";
+      mute.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i>`;
+      lucide.createIcons();
+    };
+
+    // تمام‌صفحه
+fullscreen.onclick = () => {
+  if (!document.fullscreenElement) {
+    video.parentElement.requestFullscreen();
+    fullscreen.innerHTML = `<i data-lucide="minimize" class="w-5 h-5"></i>`;
+  } else {
+    document.exitFullscreen();
+    fullscreen.innerHTML = `<i data-lucide="maximize" class="w-5 h-5"></i>`;
+  }
+  lucide.createIcons();
+};
+
+
+    // نوار پیشرفت
+    video.addEventListener("timeupdate", () => {
+      const percent = (video.currentTime / video.duration) * 100;
+      progress.style.width = percent + "%";
+    });
+
+    progressBar.onclick = (e) => {
+      const rect = progressBar.getBoundingClientRect();
+      const percent = (e.clientX - rect.left) / rect.width;
+      video.currentTime = percent * video.duration;
+    };
+
+    // تغییر کیفیت
+    qualitySelect.onchange = () => {
+      const time = video.currentTime;
+      const isPlaying = !video.paused;
+      video.src = `${currentVideoName}-${qualitySelect.value}.mp4`;
+      video.load();
+      video.currentTime = time;
+      if (isPlaying) video.play();
+      updatePlayIcon();
+    };
+    document.addEventListener("fullscreenchange", () => {
+  const isFull = !!document.fullscreenElement;
+  fullscreen.innerHTML = `<i data-lucide="${isFull ? 'minimize' : 'maximize'}" class="w-5 h-5"></i>`;
+  lucide.createIcons();
+});
+
+
+    // بارگذاری اولیه آیکون‌ها
+    lucide.createIcons();
+  </script>
+
+</body>
+</html>
